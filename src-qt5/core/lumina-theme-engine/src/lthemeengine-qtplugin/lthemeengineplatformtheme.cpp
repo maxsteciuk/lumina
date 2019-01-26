@@ -61,8 +61,9 @@ lthemeenginePlatformTheme::lthemeenginePlatformTheme(){
 }
 
 lthemeenginePlatformTheme::~lthemeenginePlatformTheme(){
-  if(m_customPalette)
-    delete m_customPalette;
+// FIXME:
+//  if(m_customPalette)
+//    delete m_customPalette;
 }
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 7, 0)) && !defined(QT_NO_DBUS)
@@ -118,16 +119,19 @@ QVariant lthemeenginePlatformTheme::themeHint(QPlatformTheme::ThemeHint hint) co
 void lthemeenginePlatformTheme::applySettings(){
   if(!QGuiApplication::desktopSettingsAware()){ return; }
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 5, 0))
- if(!m_update){
+ if(!m_update)
+ {
    //do not override application palette
-   if(QCoreApplication::testAttribute(Qt::AA_SetPalette)){
+   if(QCoreApplication::testAttribute(Qt::AA_SetPalette))
+   {
      m_usePalette = false;
      qCDebug(llthemeengine) << "palette support is disabled";
-     }
    }
+ }
 #endif
 #ifdef QT_WIDGETS_LIB
-  if(hasWidgets()){
+  if(hasWidgets())
+  {
     qApp->setFont(m_generalFont);
     //Qt 5.6 or higher should be use themeHint function on application startup.
     //So, there is no need to call this function first time.
@@ -137,60 +141,97 @@ void lthemeenginePlatformTheme::applySettings(){
 #else
       qApp->setWheelScrollLines(m_wheelScrollLines);
 #endif
-      if(m_update && qApp->style()->objectName() == "lthemeengine-style") /* ignore application style */ { qApp->setStyle("lthemeengine-style"); } //recreate style object
-      if(m_update && m_usePalette){
-        if(m_customPalette){ qApp->setPalette(*m_customPalette); }
-        else{ qApp->setPalette(qApp->style()->standardPalette()); }
+
+      if(m_update && qApp->style()->objectName() == "lthemeengine-style") /* ignore application style */ 
+      { 
+        qApp->setStyle("lthemeengine-style"); 
+      } //recreate style object
+      if(m_update && m_usePalette)
+      {
+        if(m_customPalette)
+        {
+             qApp->setPalette(*m_customPalette); 
         }
+        else
+        { 
+           qApp->setPalette(qApp->style()->standardPalette());
+        }
+      }
         //do not override application style if one is already set by the app itself
       QString orig = qApp->styleSheet();
-      if(orig.startsWith(m_oldStyleSheet)){ orig = orig.remove(m_oldStyleSheet); }
-      qApp->setStyleSheet(m_userStyleSheet+orig); //make sure the app style has higher priority than ours
+      if(orig.startsWith(m_oldStyleSheet))
+      { 
+         orig = orig.remove(m_oldStyleSheet); 
+      }
+      qApp->setStyleSheet(m_userStyleSheet + orig); //make sure the app style has higher priority than ours
       m_oldStyleSheet = m_userStyleSheet;
-
     }
 #endif
   QGuiApplication::setFont(m_generalFont); //apply font
   bool ithemechange = m_iconTheme != QIcon::themeName();
+
   QIcon::setThemeName(m_iconTheme); //apply icons
+
   //See if we need to reload the application icon from the new theme
-  if(ithemechange){
+  if(ithemechange) 
+  {
     QString appIcon = qApp->windowIcon().name();
-    if(!appIcon.isEmpty() && QIcon::hasThemeIcon(appIcon)){ qApp->setWindowIcon(QIcon::fromTheme(appIcon)); }
+    if(!appIcon.isEmpty() && QIcon::hasThemeIcon(appIcon))
+    { 
+       qApp->setWindowIcon(QIcon::fromTheme(appIcon)); 
+    }
     QWindowList wins = qApp->topLevelWindows();
-    for(int i=0; i<wins.length(); i++){
-     QString winIcon = wins[i]->icon().name();
-      if(!winIcon.isEmpty() && QIcon::hasThemeIcon(winIcon)){ wins[i]->setIcon(QIcon::fromTheme(winIcon)); }
+    for(int i=0; i<wins.length(); i++)
+    {
+       QString winIcon = wins[i]->icon().name();
+       if(!winIcon.isEmpty() && QIcon::hasThemeIcon(winIcon))
+       { 
+           wins[i]->setIcon(QIcon::fromTheme(winIcon)); 
+       }
     }
   }
   bool cthemechange = m_cursorTheme != QString(getenv("X_CURSOR_THEME"));
   setenv("X_CURSOR_THEME", m_cursorTheme.toLocal8Bit().data(), 1);
-  //qDebug() << "Icon Theme Change:" << m_iconTheme << QIcon::themeSearchPaths();
-  if(m_customPalette && m_usePalette){ QGuiApplication::setPalette(*m_customPalette); } //apply palette
+//  qDebug() << "Icon Theme Change:" << m_iconTheme << QIcon::themeSearchPaths();
+  if(m_customPalette && m_usePalette)
+  { 
+      QGuiApplication::setPalette(*m_customPalette); 
+  } //apply palette
 #ifdef QT_WIDGETS_LIB
-  if(hasWidgets()){
+  if(hasWidgets())
+  {
     QEvent et(QEvent::ThemeChange);
     QEvent ec(QEvent::CursorChange);
-    foreach (QWidget *w, qApp->allWidgets()){
-      if(ithemechange){ QApplication::sendEvent(w, &et); }
-      if(cthemechange){ QApplication::sendEvent(w, &ec); }
+    foreach (QWidget *w, qApp->allWidgets())
+    {
+      if(ithemechange)
+      { 
+         QApplication::sendEvent(w, &et); 
+      }
+      if(cthemechange)
+      { 
+         QApplication::sendEvent(w, &ec); }
       }
     }
 #endif
-  if(!m_update){ m_update = true; }
-
+  if(!m_update)
+  { 
+    m_update = true; 
+  }
   //Mouse Cursor syncronization
   /*QString mthemefile = QDir::homePath()+"/.icons/default/index.theme";
-  if(!watcher->files().contains(mthemefile) && QFile::exists(mthemefile)){
-    watcher->addPath(mthemefile); //X11 mouse cursor theme file
+//  if(!watcher->files().contains(mthemefile) && QFile::exists(mthemefile)){
+//    watcher->addPath(mthemefile); //X11 mouse cursor theme file
     //qDebug() << "Add Mouse Cursor File to Watcher";
-    syncMouseCursorTheme(mthemefile);
+//    syncMouseCursorTheme(mthemefile);
   }*/
   //Now cleanup any old palette as needed
   if(outgoingpalette != 0){
     QCoreApplication::processEvents(); //make sure everything switches to the new palette first
-    delete outgoingpalette;
+    //FIXME:
+    //delete outgoingpalette;
   }
+
 }
 #ifdef QT_WIDGETS_LIB
 
@@ -198,7 +239,7 @@ void lthemeenginePlatformTheme::createFSWatcher(){
   watcher = new QFileSystemWatcher(this);
   watcher->addPath(lthemeengine::configPath()); //theme engine settings directory
   watcher->addPath(QDir::homePath()+"/.icons/default/index.theme"); //X11 mouse cursor theme file
-  QTimer *timer = new QTimer(this);
+  timer = new QTimer(this);
   timer->setSingleShot(true);
   timer->setInterval(500);
   connect(watcher, SIGNAL(directoryChanged(QString)), timer, SLOT(start()));
@@ -207,9 +248,11 @@ void lthemeenginePlatformTheme::createFSWatcher(){
 }
 
 void lthemeenginePlatformTheme::updateSettings(){
-  //qCDebug(llthemeengine) << "updating settings..";
+  qCDebug(llthemeengine) << "updating settings..";
+  disconnect(timer);
   readSettings();
   applySettings();
+  connect(timer, SIGNAL(timeout()), SLOT(updateSettings()));
 }
 #endif
 
@@ -230,7 +273,7 @@ void lthemeenginePlatformTheme::readSettings(){
   m_style = settings.value("style", "Fusion").toString();
   if(settings.value("custom_palette", false).toBool()){
     QString schemePath = settings.value("color_scheme_path","airy").toString();
-    m_customPalette = new QPalette(loadColorScheme(schemePath));
+    m_customPalette = loadColorScheme(schemePath);
   }
   m_cursorTheme = settings.value("cursor_theme","").toString();
   m_iconTheme = settings.value("icon_theme", "material-design-light").toString();
@@ -264,11 +307,17 @@ void lthemeenginePlatformTheme::readSettings(){
       }
     //load style sheets
 #ifdef QT_WIDGETS_LIB
-    QStringList qssPaths;
-    if(qApp->applicationFilePath().section("/",-1).startsWith("lumina-desktop") ){ qssPaths << settings.value("desktop_stylesheets").toStringList(); }
-    qssPaths << settings.value("stylesheets").toStringList();
-    //qDebug() << "Loaded Stylesheets:" << qApp->applicationName() << qssPaths;
-    m_userStyleSheet = loadStyleSheets(qssPaths);
+    if(hasWidgets())
+    {
+       QStringList qssPaths;
+       if(qApp->applicationFilePath().section("/",-1).startsWith("lumina-desktop") )
+       { 
+         qssPaths << settings.value("desktop_stylesheets").toStringList(); 
+       }
+       qssPaths << settings.value("stylesheets").toStringList();
+//       qDebug() << "Loaded Stylesheets:" << qApp->applicationName() << qssPaths;
+       m_userStyleSheet = loadStyleSheets(qssPaths);
+    }
 #endif
     settings.endGroup();
 }
@@ -280,7 +329,7 @@ bool lthemeenginePlatformTheme::hasWidgets(){
 #endif
 
 QString lthemeenginePlatformTheme::loadStyleSheets(const QStringList &paths){
-  //qDebug() << "Loading Stylesheets:" << paths;
+//  qDebug() << "Loading Stylesheets:" << paths;
   QString content;
   foreach (QString path, paths){
     if(!QFile::exists(path)){ continue; }
@@ -294,9 +343,8 @@ QString lthemeenginePlatformTheme::loadStyleSheets(const QStringList &paths){
   return content;
 }
 
-QPalette lthemeenginePlatformTheme::loadColorScheme(QString filePath){
+const QPalette* lthemeenginePlatformTheme::loadColorScheme(QString filePath){
   if(!filePath.contains("/") && !filePath.endsWith(".conf") && !filePath.isEmpty()){
-    //relative theme name, auto-complete it
     QStringList dirs;
     dirs << getenv("XDG_CONFIG_HOME");
     dirs << QString(getenv("XDG_CONFIG_DIRS")).split(":");
@@ -308,7 +356,7 @@ QPalette lthemeenginePlatformTheme::loadColorScheme(QString filePath){
     }
   }
 
-  QPalette customPalette;
+  QPalette* customPalette = new QPalette();
   QSettings settings(filePath, QSettings::IniFormat);
   settings.beginGroup("ColorScheme");
   QStringList activeColors = settings.value("active_colors").toStringList();
@@ -318,12 +366,15 @@ QPalette lthemeenginePlatformTheme::loadColorScheme(QString filePath){
   if(activeColors.count() <= QPalette::NColorRoles && inactiveColors.count() <= QPalette::NColorRoles && disabledColors.count() <= QPalette::NColorRoles){
     for (int i = 0; i < QPalette::NColorRoles && i<activeColors.count(); i++){
       QPalette::ColorRole role = QPalette::ColorRole(i);
-      customPalette.setColor(QPalette::Active, role, QColor(activeColors.at(i)));
-      customPalette.setColor(QPalette::Inactive, role, QColor(inactiveColors.at(i)));
-      customPalette.setColor(QPalette::Disabled, role, QColor(disabledColors.at(i)));
+      customPalette->setColor(QPalette::Active, role, QColor(activeColors.at(i)));
+      customPalette->setColor(QPalette::Inactive, role, QColor(inactiveColors.at(i)));
+      customPalette->setColor(QPalette::Disabled, role, QColor(disabledColors.at(i)));
       }
     }
-  else{ customPalette = *QPlatformTheme::palette(SystemPalette); } //load fallback palette
+  else{ 
+       delete customPalette; 
+       return QPlatformTheme::palette(SystemPalette); 
+  } //load fallback palette
   return customPalette;
 }
 
@@ -344,7 +395,7 @@ void lthemeenginePlatformTheme::syncMouseCursorTheme(QString indexfile){
   QString curtheme = QString(XcursorGetTheme(QX11Info::display()) ); //currently-used theme
   //qDebug() << "Sync Mouse Cursur Theme:" << curtheme << newtheme;
   if(curtheme!=newtheme){
-    qDebug() << " - Setting new cursor theme:" << newtheme;
+//    qDebug() << " - Setting new cursor theme:" << newtheme;
     XcursorSetTheme(QX11Info::display(), newtheme.toLocal8Bit().data()); //save the new theme name
   }else{
     return;

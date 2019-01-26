@@ -67,10 +67,11 @@ private:
     bool hasWidgets();
 #endif
     QString loadStyleSheets(const QStringList &paths);
-    QPalette loadColorScheme(QString filePath);
+    const QPalette* loadColorScheme(QString filePath);
     QString m_style, m_iconTheme, m_userStyleSheet, m_oldStyleSheet, m_cursorTheme;
-    QPalette *m_customPalette = nullptr;
-    QPalette *outgoingpalette = nullptr;
+    const QPalette *m_customPalette = nullptr;
+    const QPalette *outgoingpalette = nullptr;
+    QTimer* timer = nullptr;
     QFont m_generalFont, m_fixedFont;
     int m_doubleClickInterval;
     int m_cursorFlashTime;
