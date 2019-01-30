@@ -463,7 +463,7 @@ void MainUI::endPresentation() {
 }
 
 void MainUI::startLoadingPages(int degrees) {
-  //qDebug() <<"Start Loading Pages";
+  qDebug() <<"Start Loading Pages";
   // if(BACKEND->hashSize() != 0) { return; } //currently loaded[ing]
   loadingQueue.clear();
   BACKEND->clearHash();
@@ -491,17 +491,17 @@ void MainUI::startLoadingPages(int degrees) {
   }*/
   int n = BACKEND->numPages() + 1;
   for (int i = 1; i < n; i++) {
-    // qDebug() << " - Kickoff page load:" << i;
-    if (BACKEND->loadMultiThread()) {
-      QtConcurrent::run(BACKEND, &Renderer::renderPage, i, DPI, degrees);
-    } else {
+     qDebug() << " - Kickoff page load:" << i;
+//    if (BACKEND->loadMultiThread()) {
+//      QtConcurrent::run(BACKEND, &Renderer::renderPage, i, DPI, degrees);
+//    } else {
       BACKEND->renderPage(i, DPI, degrees);
       if (i % 50 == 0) {
         QCoreApplication::processEvents();
       }
-    }
+  //  }
   }
-  //qDebug() << "Finish page loading kickoff";
+  qDebug() << "Finish page loading kickoff";
 }
 
 void MainUI::slotSetProgress(int finished) { progress->setValue(finished); }
@@ -511,6 +511,8 @@ void MainUI::slotPageLoaded(int page) {
   loadingQueue.push_back(page);
   int finished = loadingQueue.size();
   //qDebug() << "Page Loaded:" << page << finished;
+
+qDebug() << "++++ finished " << finished << " BACKEND->numPages() " << BACKEND->numPages();
   if (finished == BACKEND->numPages()) {
     progAct->setVisible(false);
     WIDGET->setVisible(true);

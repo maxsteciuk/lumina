@@ -67,12 +67,13 @@ bool Renderer::loadDocument(QString path, QString password) {
       return false;
     } // invalid password
   }
-  // qDebug() << "Opening File:" << path;
+   qDebug() << "Opening File:" << path;
   doctitle = DOC->title();
   if (doctitle.isEmpty()) {
     doctitle = path.section("/", -1);
   }
   pnum = DOC->numPages();
+qDebug() << "++++  1 pnum " << pnum << " pages.size() " << pages.size();
   // Setup the Document
   Poppler::Page *PAGE = DOC->page(0);
   if (PAGE != 0) {
@@ -97,15 +98,21 @@ bool Renderer::loadDocument(QString path, QString password) {
 
     pagesStillLoading = pnum;
 
+qDebug() << "++++  2 pnum " << pnum << " pages.size() " << pages.size();
     return true; // could load the first page
   }
   return false; // nothing to load
 }
 
 void Renderer::renderPage(int pagenum, QSize DPI, int degrees) {
-  // qDebug() << "Render Page:" << pagenum << DPI << degrees;
+   qDebug() << "Render Page:" << pagenum << DPI << degrees;
 
-  emit SetProgress(pages.size() - pagesStillLoading);
+qDebug() << "+++ progress " << (pages.size() - pagesStillLoading)
+<< " pages.size() " << pages.size() 
+<< " pagesStillLoading " << pagesStillLoading
+<< " pagenum " << pagenum;
+
+  emit SetProgress((pages.size() > 0) ? (pages.size() - pagesStillLoading ) : 0);
 
   if (DOC != nullptr) {
     Poppler::Page *PAGE = DOC->page(pagenum - 1);
@@ -127,12 +134,16 @@ void Renderer::renderPage(int pagenum, QSize DPI, int degrees) {
       }
 
       LuminaPDF::drawablePage temp(PAGE, DPI, rotation);
-      pages[pagenum] = std::move(temp);
-      // img = PAGE->renderToImage(DPI.width(), DPI.height(), -1, -1, -1, -1,
-      //                          rotation);
-      // loadingHash.insert(pagenum, img);
+//      if(static_cast<std::size_t>(pagenum) > pages.size()) {
+//         pages.resize(pagenum * 2);    
+//      }
+      pages.at(pagenum) = std::move(temp);
+      img = PAGE->renderToImage(DPI.width(), DPI.height(), -1, -1, -1, -1,
+                                rotation);
+      loadingHash.insert(pagenum, img);
       QList<LuminaPDF::Link *> linkArray;
 
+qDebug() << "++++ PAGE->links().size() " << PAGE->links().size(); 
       foreach (Poppler::Link *link, PAGE->links()) {
         QString location;
         if (link->linkType() == Poppler::Link::LinkType::Goto)
@@ -147,17 +158,24 @@ void Renderer::renderPage(int pagenum, QSize DPI, int degrees) {
       links[pagenum] = linkArray;
       // linkHash.insert(pagenum, linkArray);
     }
-    // qDebug() << "Done Render Page:" << pagenum << img.size();
+else
+{
+qDebug() << "++++ PAGE is null" ;
+}
+     qDebug() << "Done Render Page:" << pagenum << img.size();
   } else {
+qDebug() << "++++ DOC is null" ;
     pages[pagenum] = LuminaPDF::drawablePage();
-    // loadingHash.insert(pagenum, QImage());
-  }
-
-  if (pagesStillLoading == 1) {
-    emit PageLoaded(pagenum);
+     loadingHash.insert(pagenum, QImage());
   }
 
   --pagesStillLoading;
+ 
+qDebug() << "++++ pagesStillLoading " << pagesStillLoading; 
+//  if (pagesStillLoading == 0) {
+    emit PageLoaded(pagenum);
+ // }
+
 }
 
 bool Renderer::isDoneLoading(int page) { return imageCache.contains(page); }
@@ -202,7 +220,7 @@ int Renderer::hashSize() {
 
 void Renderer::clearHash() {
   loadingHash.clear();
-  pages.clear();
+//  pages.clear();
 }
 
 // Highlighting found text, bookmarks, and page properties disabled for Poppler
