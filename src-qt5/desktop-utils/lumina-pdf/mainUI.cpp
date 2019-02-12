@@ -407,7 +407,7 @@ void MainUI::startPresentation(bool atStart) {
 
 void MainUI::ShowPage(int page) {
   // Check for valid document/page
-  //qDebug() << "Load Page:" << page << "/" << BACKEND->numPages() << "Index:" << page;
+  qDebug() << "Load Page:" << page << "/" << BACKEND->numPages() << "Index:" << page;
   //page = std::max(1, std::min(page, BACKEND->numPages()));
   if (page == BACKEND->numPages()+2 ) { //allow one blank/black page after the end of the last slide
     endPresentation();
@@ -420,7 +420,7 @@ void MainUI::ShowPage(int page) {
     WIDGET->updatePreview();
     return;
   }
-  //qDebug() << "Show Page:" << page << "/" << BACKEND->numPages();
+  qDebug() << "Show Page:" << page << "/" << BACKEND->numPages();
   CurrentPage = page;
   QImage PAGEIMAGE;
   if (page < BACKEND->numPages() + 1) {
@@ -496,6 +496,7 @@ void MainUI::startLoadingPages(int degrees) {
 //      QtConcurrent::run(BACKEND, &Renderer::renderPage, i, DPI, degrees);
 //    } else {
       BACKEND->renderPage(i, DPI, degrees);
+      ShowPage(i);
       if (i % 50 == 0) {
         QCoreApplication::processEvents();
       }

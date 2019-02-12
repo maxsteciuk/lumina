@@ -201,7 +201,12 @@ QSize Renderer::imageSize(int pagenum) {
 }
 
 QImage Renderer::imageHash(int pagenum) {
-  if(!imageCache.contains(pagenum)){ return QImage(); }
+  if(!imageCache.contains(pagenum)){ 
+
+   imageCache.push(pagenum, pages[pagenum].render());
+   return *imageCache.get(pagenum); 
+
+   }
   // while(pagesStillLoading > 0) { qDebug() << "pagesStillLoading!\n";}
 
   std::optional<QImage> cachedImage = imageCache.get(pagenum);
